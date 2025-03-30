@@ -53,7 +53,7 @@ def register_bin_images(original_images_directory):
                 'relative_translation': rel_tvec
             })
 
-    with open("registered_image_poses.json", "w") as file:
+    with open("data/registered_image_poses.json", "w") as file:
         serializable_images = numpy_to_json_serializable(registered_images)
         json.dump(serializable_images, file)
 
