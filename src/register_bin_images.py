@@ -3,7 +3,7 @@ import re
 import json
 import cv2
 import numpy as np
-from PIL import Image
+from get_data import group_photos_by_bin
 
 def register_bin_images(original_images_directory):
     with open("data/metadata.json", "rb") as metadata:
@@ -90,51 +90,6 @@ def calculate_relative_pose(ref_rvec, ref_tvec, curr_rvec, curr_tvec):
     
     return rel_rvec, rel_tvec
 
-
-def group_photos_by_bin(original_images_directory):
-    with open("data/metadata.json", "rb") as metadata_file:
-        metadata_json = json.load(metadata_file)
-    
-    bin_to_image_dict = {}
-    
-    # Count files for debugging
-    file_count = 0
-    match_count = 0
-    
-    for root, dirs, files in os.walk(original_images_directory):
-        for file in files:
-            file_count += 1
-            
-            # Extract the UUID using regex
-            uuid_pattern = r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
-            match = re.search(uuid_pattern, file)
-            
-            if match:
-                image_id = match.group(1)
-                
-                # Find matching metadata entry
-                matching_entries = [entry for entry in metadata_json if entry['_id'] == image_id]
-                
-                if matching_entries:
-                    match_count += 1
-                    metadata_entry = matching_entries[0]
-                    
-                    # Extract bin ID
-                    if 'bin_id' in metadata_entry and metadata_entry['bin_id']:
-                        curr_bin_id = metadata_entry['bin_id'][0]
-                        
-                        # Initialize bin list if it doesn't exist
-                        if curr_bin_id not in bin_to_image_dict:
-                            bin_to_image_dict[curr_bin_id] = []
-                        
-                        # Append file to the bin
-                        bin_to_image_dict[curr_bin_id].append(file)
-    
-    print(f"Processed {file_count} files, found {match_count} metadata matches")
-    print(f"Created {len(bin_to_image_dict)} bin groups")
-    
-    return bin_to_image_dict
-
 def extract_pose_position(json_list):
     return np.array([json_list['pose']['position']['x'], 
             json_list['pose']['position']['y'],
@@ -167,11 +122,5 @@ def convert_orientation_to_rotation(metadata_entry):
     
 
 if __name__=="__main__":
+    #group_photos_by_bin(original_images_directory="data/images/original_images")
     register_bin_images(original_images_directory="data/images/original_images")
-    # grouped_photo_dict = group_photos_by_bin("data/images/original_images")
-    # i = 0
-    # for bin, images in grouped_photo_dict.items():
-    #     if i > 10 and i < 30:
-    #         print(bin)
-    #         print(images)
-    #     i += 1
