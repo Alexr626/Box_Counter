@@ -1,3 +1,59 @@
+# How to run this branch
+
+## For the envitonment:
+```shell
+conda create -n monodepth2 python=3.6.6
+pip install tensorboardX==1.4
+conda install opencv=3.3.1
+```
+Then, install pytorch based on your cuda version. My cuda version is 10.0, so for me:
+```shell
+conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=10.0 -c pytorch
+```
+For more options, find in https://pytorch.org/get-started/previous-versions/
+
+## Run a demo using a pretrained model
+```shell
+python test_simple.py --image_path assets/test_image.jpg --model_name mono+stereo_640x192 --pred_metric_depth
+```
+This command will download the mono+stereo_640x192 pretrained model (99MB) into the models/ folder.
+
+## For fine-tuning part:
+After get the pretrained model into the models/ folder, we an start fine-tuning.
+To the dataset, you should put all the images into one folder, such as original_images/
+Then, in the generate_shelf_filelist_split.py, change the value of image_dir to the path of your dataset folder.
+Then, run:
+```shell
+python generate_shelf_filelist_split.py
+```
+This command will first split the whole dataset into train, val, and test set and then generate three .txt files in splits/shelf/, which contain filenames in each set.
+
+To finetune the pretrained model, first change --data_path in scripts/finetune_shelf_model.sh to the path of your dataset.
+Then, run:
+```shell
+chmod +x scripts/finetune_shelf_model.sh
+```
+and
+```shell
+./scripts/finetune_shelf_model.sh
+```
+Trained model weights will stored in ./finetune_logs/shelf_mono_stereo_finetune/models/weights_n
+
+## Inference using finetuned model
+Change the value of LOAD_FOLDER to "./finetune_logs/shelf_mono_stereo_finetune/models/weights_n"
+, where weights_n is the folder containing the finetuned weights.
+Then run:
+```shell
+chmod +x scripts/inference_shelf_model.sh
+```
+and
+```shell
+./scripts/inference_shelf_model.sh
+```
+The generated depth map will be in assets/
+
+
+
 # Monodepth2
 
 This is the reference PyTorch implementation for training and testing depth estimation models using the method described in
