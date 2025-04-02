@@ -1,0 +1,3 @@
+"""
+Box Counter package.
+"""
