@@ -1,6 +1,6 @@
 # How to run this branch
 
-## For the envitonment:
+## For the environment:
 ```shell
 conda create -n monodepth2 python=3.6.6
 pip install tensorboardX==1.4
