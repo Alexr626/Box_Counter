@@ -1,6 +1,7 @@
-/data
+data/
 .env
-/results
-/cache
+results/
+cache/
 .DS_Store
 __pycache__
+.vscode/

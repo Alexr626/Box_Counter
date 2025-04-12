@@ -120,5 +120,4 @@ def group_photos_by_bin(original_images_directory, save=False):
 
 
 if __name__=="__main__":
-    # get_train_test_images("data/images/original_images")
-    create_train_test_bin_sets()
+    get_train_test_images("data/images/original_images")
