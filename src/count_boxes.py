@@ -18,7 +18,7 @@ from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoTokenizer, AutoProcessor
 from qwen_vl_utils import process_vision_info
 
-from .get_data import get_train_test_images
+from preprocessing.get_train_test_csvs import get_train_test_images
 from .utils import encode_image, count2group
 
 # Load environment variables from .env file
