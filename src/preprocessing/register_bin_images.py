@@ -3,7 +3,7 @@ import re
 import json
 import cv2
 import numpy as np
-from get_data import group_photos_by_bin
+from src.preprocessing.get_train_test_csvs import group_photos_by_bin
 
 def register_bin_images(original_images_directory):
     with open("data/metadata.json", "rb") as metadata:
