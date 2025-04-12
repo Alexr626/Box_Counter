@@ -3,14 +3,15 @@ import re
 import json
 import cv2
 import numpy as np
-from get_data import group_photos_by_bin
+from src.preprocessing.get_train_test_csvs import group_photos_by_bin
 
 def register_bin_images(original_images_directory):
     with open("data/metadata.json", "rb") as metadata:
         metadata_json = json.load(metadata)
     
     bin_to_image_dict = group_photos_by_bin(original_images_directory)
-    
+    registered_images = []
+
     for bin_id, bin_images in bin_to_image_dict.items():
         if len(bin_images) <= 1:
             continue  # Skip bins with only one image
@@ -22,10 +23,8 @@ def register_bin_images(original_images_directory):
         
         # Get reference pose
         ref_rotation = convert_orientation_to_rotation(ref_metadata)
-        ref_translation = extract_pose_position(ref_metadata)
-        
-        # Process all other images relative to the reference
-        registered_images = []
+        ref_translation = extract_pose_position(ref_metadata)    
+
         for i, file in enumerate(bin_images):
             curr_id = "-".join(re.split(r"[_\-\.]+", file)[1:-1])
             curr_metadata = next(entry for entry in metadata_json if entry['_id'] == curr_id)
@@ -87,6 +86,8 @@ def calculate_relative_pose(ref_rvec, ref_tvec, curr_rvec, curr_tvec):
     
     # Convert back to rotation vector
     rel_rvec, _ = cv2.Rodrigues(rel_rmat)
+
+    rel_rvec = rel_rvec.flatten()
     
     return rel_rvec, rel_tvec
 
