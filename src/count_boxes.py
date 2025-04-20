@@ -1,10 +1,14 @@
+from unsloth import FastVisionModel
+from unsloth.trainer import UnslothVisionDataCollator
 import argparse
+import csv
 from collections import defaultdict
 import re
 import time
 from dotenv import load_dotenv
 import os
 import numpy as np
+from PIL import Image
 from openai import OpenAI
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -16,10 +20,11 @@ from tenacity import (
 import torch
 from tqdm import tqdm
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoTokenizer, AutoProcessor
-from qwen_vl_utils import process_vision_info
 
-from preprocessing.get_train_test_csvs import get_train_test_images
+from qwen_vl_utils import process_vision_info
+from .preprocessing.get_train_test_csvs import get_train_test_images
 from .utils import encode_image, count2group
+from .prompts import *
 
 # Load environment variables from .env file
 load_dotenv()
@@ -28,14 +33,16 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 print(f"OPENAI_API_KEY: {OPENAI_API_KEY}")
 
-def count_boxes_and_evaluate(images_directory: str, model_name: str, save: bool = True, comment: str = ""):
+def count_boxes_and_evaluate(images_directory: str, model_name: str, prompt: str, save: bool = True, cache: bool = True, comment: str = ""):
     """
     Count the number of boxes in each image and evaluate the accuracy of the model.
     
     Args:
         images_directory (str): The directory containing the images
         model_name (str): The model to use to count the boxes
-        save (bool): Whether to save the results
+        prompt (str): The prompt fed to the model
+        save (bool): Whether or not to save the results
+        cache (bool): Whether or not to cache model responses
         comment (str): A comment to add to the results filename
     Returns:
         images_per_bin (dict): The number of images in each bin
@@ -44,15 +51,23 @@ def count_boxes_and_evaluate(images_directory: str, model_name: str, save: bool 
         mse_per_bin (dict): The mean squared error of the model in each bin
         invalid_response_rate_per_bin (dict): The invalid response rate of the model in each bin
     """
-    if model_name != 'gpt':
-        model_name_complete = 'Qwen/'+model_name
-        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            model_name_complete, 
-            torch_dtype=torch.bfloat16, 
-            attn_implementation="flash_attention_2",
-            device_map="auto"
-        )
-        processor = AutoProcessor.from_pretrained(model_name_complete)
+    # if model_name.startswith('results/'):
+    model, tokenizer = FastVisionModel.from_pretrained(
+        model_name = model_name,
+        load_in_4bit = False, # Set to False for 16bit LoRA
+    )
+    FastVisionModel.for_inference(model) # Enable for inference!
+    # print(model.config.vision_config)
+    model_name = model_name.split('/')[-1]
+    # elif model_name != 'gpt':
+    #     model_name_complete = 'Qwen/'+model_name
+    #     model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+    #         model_name_complete, 
+    #         torch_dtype=torch.bfloat16, 
+    #         attn_implementation="flash_attention_2",
+    #         device_map="auto"
+    #     )
+        # processor = AutoProcessor.from_pretrained(model_name_complete)
 
     ground_truth_counts = {}
     groud_truth_group = {}
@@ -82,10 +97,18 @@ def count_boxes_and_evaluate(images_directory: str, model_name: str, save: bool 
         box_count = ground_truth_counts[bin_id]
         count_pred = []
 
-        for image_filename in tqdm(image_filenames, desc=f"Bin {bin_id}", leave=False, unit="img"):
-            image_path = os.path.join(images_directory, image_filename)
-            count = count_boxes_with_cache(image_path, model_name, comment=comment, model=model, processor=processor)
-            count_pred.append(count)
+        if tokenizer:
+            image_paths = [os.path.join(images_directory, image_filename) for image_filename in image_filenames]
+            batch_size = 8
+            for i in tqdm(range(0, len(image_paths), batch_size), desc=f"Bin {bin_id}", unit="batch"):
+                batch_image_paths = image_paths[i:i+batch_size]
+                counts = count_boxes_unsloth(batch_image_paths, prompt, model, tokenizer)
+                count_pred.extend(counts)
+        else:
+            for image_filename in tqdm(image_filenames, desc=f"Bin {bin_id}", leave=False, unit="img"):
+                image_path = os.path.join(images_directory, image_filename)
+                count = count_boxes_with_cache(image_path, model_name, prompt=prompt, comment=comment, write_to_cache=cache, read_from_cache=cache, model=model, processor=processor)
+                count_pred.append(count)
 
         images_per_bin[bin_id] = len(count_pred)
         avg_count_per_bin[bin_id] = np.mean(count_pred)
@@ -193,7 +216,7 @@ def count_boxes_and_evaluate(images_directory: str, model_name: str, save: bool 
         fig.savefig(result_filename+'.png', dpi=300)    
 
 
-def count_boxes_with_cache(image_path: str, model_name: str, write_to_cache: bool = True, read_from_cache: bool = True, comment: str = "", **kwargs) -> int:
+def count_boxes_with_cache(image_path: str, model_name: str, prompt: str, write_to_cache: bool = True, read_from_cache: bool = True, comment: str = "", **kwargs) -> int:
     """
     Count the number of boxes in an image using cache.
 
@@ -215,10 +238,11 @@ def count_boxes_with_cache(image_path: str, model_name: str, write_to_cache: boo
                 if os.path.getsize(cache_file) == 0:
                     print(f"Cache file {cache_file} is empty.")
                 else:
+                    reader = csv.reader(file)
                     # Skip the header line
-                    next(file)
-                    for line in file:
-                        image, response_cached, count = line.split(',')
+                    next(reader)
+                    for line in reader:
+                        image, response_cached, count = line
                         if image_path == image:
                             # print(f"Found cached result for {image_path} with model {model}.")
                             return int(count)
@@ -226,15 +250,17 @@ def count_boxes_with_cache(image_path: str, model_name: str, write_to_cache: boo
             print(f"Error reading cache file: {e}")
     
     if model_name == 'gpt':
-        response = count_boxes_gpt(image_path)
-    else:
+        response = count_boxes_gpt(image_path, prompt)
+    elif kwargs['model'] and kwargs['processor']:
         model, processor = kwargs['model'], kwargs['processor']
-        response = count_boxes_vlm(image_path, model, processor)
+        response = count_boxes_vlm(image_path, prompt, model, processor)
+    else:
+        raise ValueError(f"Model {model_name} not supported.")
 
-    number = re.search(r'\d+', response)
+    numbers = re.findall(r'\d+', response)
     count = -1
-    if number:
-        count = int(number.group())
+    if numbers:
+        count = int(numbers[-1])
     else:
         print(f"Model response does not contain a number, returning -1")
 
@@ -246,7 +272,8 @@ def count_boxes_with_cache(image_path: str, model_name: str, write_to_cache: boo
             with open(cache_file, 'a') as file:
                 if not os.path.exists(cache_file) or os.path.getsize(cache_file) == 0:
                     file.write(f"image_path,response,count\n")
-                file.write(f"{image_path},{response},{count}\n")
+                writer = csv.writer(file)
+                writer.writerow([image_path, response, count])
         except Exception as e:
             print(f"Error writing to cache file: {e}")
 
@@ -254,7 +281,7 @@ def count_boxes_with_cache(image_path: str, model_name: str, write_to_cache: boo
         
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-def count_boxes_gpt(image_path: str) -> str:
+def count_boxes_gpt(image_path: str, prompt: str) -> str:
     """
     Count the number of boxes in an image using ChatGPT API.
     
@@ -265,9 +292,6 @@ def count_boxes_gpt(image_path: str) -> str:
         str: Response from the API
     """
 
-    prompt = """Please count the number of boxes in this image. 
-    Return ONLY the number, nothing else. 
-    If you can't see any boxes, return 0."""
     base64_image = encode_image(image_path)
     
     # Make the API call
@@ -292,7 +316,7 @@ def count_boxes_gpt(image_path: str) -> str:
     # Return the response text
     return response.output_text
 
-def count_boxes_vlm(image_path: str, model, processor) -> str:
+def count_boxes_vlm(image_path: str, prompt: str, model, processor) -> str:
     """
     Count the number of boxes in an image using open source VLM.
     
@@ -308,9 +332,9 @@ def count_boxes_vlm(image_path: str, model, processor) -> str:
     
 
     # Prepare the prompt message
-    prompt = """Please count the number of boxes in this image. 
-    Return ONLY the number, nothing else. 
-    If you can't see any boxes, return 0."""
+    # prompt = """Please count the number of boxes in this image. 
+    # Return ONLY the number, nothing else. 
+    # If you can't see any boxes, return 0."""
     messages = [
         {
             "role": "user",
@@ -344,13 +368,119 @@ def count_boxes_vlm(image_path: str, model, processor) -> str:
     # print(output_text[0])
 
     return output_text[0]
+
+def count_boxes_unsloth(image_paths: list[str], prompt: str, model, tokenizer) -> list[int]:
+    """
+    Count the number of boxes in a list of images using Unsloth fine-tuned model.
     
+    Args:
+        image_paths (list[str]): List of paths to the image files
+        prompt (str): The prompt to use for the model
+    """
+
+    def prepare_inference_data(image_path, prompt):
+        """Prepare data in the same format as training data"""
+        conversation = [
+            { "role": "user",
+            "content" : [
+                {"type" : "text",  "text"  : prompt},
+                {"type" : "image", "image" : image_path} ]
+            },
+        ]
+        return {"messages": conversation}
+    
+    def inference_with_collator(image_path, prompt, model, tokenizer):
+        # Create data collator (same as training)
+        data_collator = UnslothVisionDataCollator(model, tokenizer)
+        
+        # Prepare data in training format
+        data = prepare_inference_data(image_path, prompt)
+        
+        # Use collator to process the data
+        collated_data = data_collator([data])
+        
+        # Move to GPU if available
+        collated_data = {k: v.to("cuda") if isinstance(v, torch.Tensor) else v 
+                        for k, v in collated_data.items()}
+        
+        # Generate output
+        outputs = model.generate(
+            **collated_data,
+            max_new_tokens=256,
+            use_cache=True,
+            temperature=1.5,
+            min_p=0.1
+        )
+        
+        # Decode output
+        text_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        print(text_output)
+        return text_output
+    
+    counts = []
+    # Create data collator (same as training)
+    data_collator = UnslothVisionDataCollator(model, tokenizer)
+    
+    # Prepare data in training format
+    data = [prepare_inference_data(image_path, prompt) for image_path in image_paths]
+    
+    # Use collator to process the data
+    collated_data = data_collator(data).to("cuda")
+    
+    # Generate output
+    outputs = model.generate(
+        **collated_data,
+        max_new_tokens=256,
+        use_cache=True,
+        temperature=1.5,
+        min_p=0.1
+    )
+    
+    # Decode output
+    text_outputs = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    # print(text_outputs[0])
+    for text_output in text_outputs:
+        numbers = re.findall(r'\d+', text_output)
+        count = -1
+        if numbers:
+            count = int(numbers[-1])
+        else:
+            print(f"Model response does not contain a number, returning -1")
+        counts.append(count)
+    
+    # for image_path in image_paths:
+    #     text_output = inference_with_collator(image_path, prompt, model, tokenizer)
+
+    #     numbers = re.findall(r'\d+', text_output)
+    #     count = -1
+    #     if numbers:
+    #         count = int(numbers[-1])
+    #     else:
+    #         print(f"Model response does not contain a number, returning -1")
+    #     counts.append(count)
+    return counts
+
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--images_directory', type=str, default='data/original_images')
-    parser.add_argument('--model', type=str, default='gpt')
-    parser.add_argument('--save', type=bool, default=True)
-    parser.add_argument('--comment', type=str, default='')
-    args = parser.parse_args()
-    count_boxes_and_evaluate(images_directory=args.images_directory, model_name=args.model, save=args.save, comment=args.comment)
+    
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--images_directory', type=str, default='data/original_images')
+    # parser.add_argument('--model', type=str, default='Qwen2.5-VL-7B-Instruct')
+    # parser.add_argument('--prompt', type=str, default=prompt)
+    # parser.add_argument('--save', type=bool, default=True)
+    # parser.add_argument('--comment', type=str, default='')
+    # args = parser.parse_args()
+    # count_boxes_and_evaluate(images_directory=args.images_directory, model_name=args.model, prompt=args.prompt, save=args.save, comment=args.comment)
+    
+    # count_boxes_and_evaluate(images_directory='data/original_images', 
+    #                          model_name='Qwen2.5-VL-7B-Instruct', 
+    #                          prompt=prompt2, 
+    #                          save=True, 
+    #                          cache=False,
+    #                          comment='prompt2')
+    count_boxes_and_evaluate(images_directory='data/original_images', 
+                             model_name='results/Qwen2.5-VL-7B-Instruct_sft_0', 
+                             prompt=prompt0, 
+                             save=True, 
+                             cache=False,
+                             comment='prompt0')
