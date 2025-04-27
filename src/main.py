@@ -14,8 +14,8 @@ from depth_map_estimation.extract_pixel_depths import propagate_depth_calibratio
 # Creates subdirectory of cropped images in data/ and created metadata file that reflects cropping
 # Bottom and top percentages of rows of pixel to crop set to 12 to git rid of black areas due to wideview camera
 def crop_images(bottom_percentage = 12, top_percentage = 12):
-    # process_all_images(top_percentage=top_percentage,
-    #                    bottom_percentage=bottom_percentage)
+    process_all_images(top_percentage=top_percentage,
+                       bottom_percentage=bottom_percentage)
     
     create_cropped_metadata(top_percentage=top_percentage,
                                  bottom_percentage=bottom_percentage)
