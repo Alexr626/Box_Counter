@@ -3,21 +3,28 @@ import re
 import json
 import cv2
 import numpy as np
-from src.preprocessing.get_train_test_csvs import group_photos_by_bin
+from preprocessing.preprocess_raw_data import group_photos_by_bin
 
-def register_bin_images(original_images_directory):
-    with open("data/metadata.json", "rb") as metadata:
+def register_bin_images(with_cropped_images=True):
+    if with_cropped_images:
+        metadata_path = "data/images/cropped_images_metadata.json"
+        image_directory = "data/images/cropped_images"
+    else:
+        metadata_path = "data/images/metadata.json"
+        image_directory = "data/images/original_images"
+
+    with open(metadata_path, "rb") as metadata:
         metadata_json = json.load(metadata)
     
-    bin_to_image_dict = group_photos_by_bin(original_images_directory)
+    bin_to_image_dict = group_photos_by_bin(with_paths=True)
     registered_images = []
 
     for bin_id, bin_images in bin_to_image_dict.items():
         if len(bin_images) <= 1:
             continue  # Skip bins with only one image
         
-        # Get metadata for the reference image (first image)
-        ref_file = bin_images[0]
+        # Get metadata for the reference image (image in middle of the flight path over the bin)
+        ref_file = bin_images[int(len(bin_images) / 2)]
         ref_id = "-".join(re.split(r"[_\-\.]+", ref_file)[1:-1])  # Extract ID from filename
         ref_metadata = next(entry for entry in metadata_json if entry['_id'] == ref_id)
         
@@ -46,15 +53,20 @@ def register_bin_images(original_images_directory):
             
             # Store or use the transformation as needed
             registered_images.append({
-                'image_path': os.path.join(original_images_directory, file),
+                'image_path': os.path.join(image_directory, file),
+                'image_id': curr_id,
                 'bin_id': bin_id,
                 'relative_rotation': rel_rvec,
                 'relative_translation': rel_tvec
             })
 
-    with open("data/registered_image_poses.json", "w") as file:
+    with open("data/images/registered_image_poses.json", "w") as file:
         serializable_images = numpy_to_json_serializable(registered_images)
         json.dump(serializable_images, file)
+
+    print(f"Saved barcode depths to data/images/registered_image_poses.json")
+    
+    return serializable_images
 
 
 def numpy_to_json_serializable(obj):
@@ -124,4 +136,4 @@ def convert_orientation_to_rotation(metadata_entry):
 
 if __name__=="__main__":
     #group_photos_by_bin(original_images_directory="data/images/original_images")
-    register_bin_images(original_images_directory="data/images/original_images")
+    register_bin_images()

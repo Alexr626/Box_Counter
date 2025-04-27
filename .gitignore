@@ -1,1 +1,4 @@
-/data
+data/depth/*
+data/images/*
+data/bin_coordinates.json
+*.pyc

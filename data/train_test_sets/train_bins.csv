@@ -1,0 +1,55 @@
+Bin_id,box_count_min,box_count_max,box_count_estimate,Confidence,volumetric_visibility,Pallet,Anomaly,Desc,Unnamed: 9,Unnamed: 10,Unnamed: 11,box_group
+04-0203-01,2,3,2,high,95%,False,,,,,,few
+04-1005-03,2,3,2,high,90%,False,,,,,,few
+04-0805-01,7,10,8,medium,85%,False,,,,,,medium
+04-0611-01,0,0,0,high,100%,True,,,,,,empty
+04-1009-01,5,7,5,medium,75%,True,,,,,,medium
+04-0407-02,12,24,15,low,65%,False,,,,,,many
+04-0605-03,6,10,6,medium,85%,False,,,,,,medium
+04-0609-01,8,21,12,low,60%,True,,,,,,medium
+04-0809-02,0,1,1,low,80%,True,True,unclear bin border,,,,few
+04-0403-01,4,6,4,medium,80%,False,,,,,,few
+04-1001-01,7,10,7,high,85%,False,,,,,,medium
+04-0209-02,0,0,0,high,100%,False,,,,,,empty
+04-1003-05,0,0,0,high,100%,False,,,,,,empty
+04-0607-02,1,2,1,high,90%,False,,,,,,few
+04-0205-03,2,4,2,medium,75%,False,,,,,,few
+04-0411-03,0,0,0,high,100%,False,,,,,,empty
+04-0809-03,0,0,0,high,100%,False,,,,,,empty
+04-0211-02,0,0,0,high,100%,True,,,,,,empty
+04-0209-03,0,0,0,high,100%,False,,,,,,empty
+04-0601-01,20,80,30,low,20%,False,True,"tons of boxes, no visibility",,,,many
+04-0211-03,0,0,0,high,100%,True,,,,,,empty
+04-0205-01,2,4,2,medium,80%,False,,,,,,few
+04-1005-02,1,2,1,high,90%,False,,,,,,few
+04-0805-03,0,0,0,high,100%,False,,,,,,empty
+04-0411-02,0,0,0,high,100%,True,,,,,,empty
+04-0207-02,10,17,14,low,70%,False,,,,,,medium
+04-0409-02,11,18,13,medium,70%,True,,,,,,medium
+04-0609-02,0,0,0,hihg,100%,True,,,,,,empty
+04-0407-01,0,0,0,high,100%,False,,,,,,empty
+04-0807-03,11,30,18,low,55%,False,,,,,,many
+04-0603-03,2,4,2,medium,80%,False,,,,,,few
+04-1005-01,4,6,4,medium,75%,False,,,,,,few
+04-0401-01,3,4,3,high,90%,False,,,,,,few
+04-0209-01,10,15,12,low,60%,True,,,,,,medium
+04-0205-02,4,6,4,medium,80%,False,,,,,,few
+04-1009-02,7,15,11,low,60%,True,,,,,,medium
+04-1003-03,0,0,0,high,100%,False,,,,,,empty
+04-1011-02,0,0,0,high,100%,False,,,,,,empty
+04-0405-01,2,3,2,medium,85%,False,True,Open boxes inside each other,,,,few
+04-1007-02,8,13,10,medium,75%,False,,,,,,medium
+04-0809-01,0,1,0,low,95%,True,True,unclear bin border,,,,empty
+04-0611-03,0,0,0,high,100%,True,,,,,,empty
+04-1003-01,3,4,3,high,90%,False,,,,,,few
+04-0211-01,0,0,0,high,100%,True,,,,,,empty
+04-0203-05,2,3,2,high,85%,False,,,,,,few
+04-1007-01,0,0,0,high,100%,False,,,,,,empty
+04-0203-03,1,2,1,high,95%,False,,,,,,few
+04-0207-01,14,21,20,low,50%,False,,,,,,many
+04-0807-01,1,2,1,high,85%,False,,,,,,few
+04-1011-01,0,0,0,high,100%,False,,,,,,empty
+04-0201-01,2,3,2,high,90%,False,,,,,,few
+04-0811-03,0,0,0,high,100%,True,,,,,,empty
+04-0607-01,12,30,18,low,50%,False,,,,,,many
+04-0607-03,0,0,0,high,100%,False,,,,,,empty
