@@ -21,9 +21,6 @@ def propagate_depth_calibration_for_vertical_flight(depth_model,
         output_file: Path to save calibration parameters for all images
         depth_map_dir: Directory containing depth map files
     """    
-    with open("data/depth/barcode_depths.json", 'r') as f:
-        barcode_depths = json.load(f)
-
     bin_image_groups = group_photos_by_bin(save=True)
     
     # Group images by bin

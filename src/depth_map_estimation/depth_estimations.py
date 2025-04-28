@@ -11,7 +11,7 @@ def get_depth_estimations(model_id, model_name):
     model = AutoModelForDepthEstimation.from_pretrained(model_id)
 
     cropped_image_dir = "data/images/cropped_images"
-    output_dir = os.path.join("data/depth", model_name)
+    output_dir = os.path.join("data/depth", model_name, "depth_maps_and_estimates")
     os.makedirs(output_dir, exist_ok=True)
 
     predictions = []

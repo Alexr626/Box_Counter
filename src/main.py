@@ -31,12 +31,12 @@ def main(depth_model, with_cropped_images = True):
     if depth_model == "midas":
         model_id = "Intel/dpt-hybrid-midas"
     else:
-        model_id = "LiheYoung/depth-anything-l"
+        model_id = "LiheYoung/depth-anything-small-hf"
 
-    if with_cropped_images:
-        crop_images()
+    # if with_cropped_images:
+    #     crop_images()
 
-    preprocess_data(with_cropped_images)
+    # preprocess_data(with_cropped_images)
     
     get_depth_estimations(model_id=model_id, 
                           model_name=depth_model)
@@ -45,4 +45,4 @@ def main(depth_model, with_cropped_images = True):
                                                     with_cropped_images=with_cropped_images)
 
 if __name__=="__main__":
-    main(depth_model="midas")
+    main(depth_model="depth_anything")
