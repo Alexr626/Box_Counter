@@ -79,7 +79,6 @@ def count_boxes_and_evaluate(images_directory: str, model_name: str, prompt: str
     num_test_images = sum([len(image_filenames) for image_filenames in test_images.values()])
     print(f"Counting boxes for {images_directory} with model {model_name}, {num_test_images} test images")
 
-    # if model_name.startswith('results/'):
     model, tokenizer = FastVisionModel.from_pretrained(
         model_name = model_name,
         load_in_4bit = False, # Set to False for 16bit LoRA
@@ -102,7 +101,7 @@ def count_boxes_and_evaluate(images_directory: str, model_name: str, prompt: str
         else:
             for image_filename in tqdm(image_filenames, desc=f"Bin {bin_id}", leave=False, unit="img"):
                 image_path = os.path.join(images_directory, image_filename)
-                count = count_boxes_with_cache(image_path, model_name, prompt=prompt, comment=comment, write_to_cache=cache, read_from_cache=cache, model=model, processor=processor)
+                count = count_boxes_with_cache(image_path, model_name, prompt=prompt, comment=comment, write_to_cache=cache, read_from_cache=cache)
                 count_pred.append(count)
 
         images_per_bin[bin_id] = len(count_pred)
