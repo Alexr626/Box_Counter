@@ -1,0 +1,15 @@
+Bin_id,box_count_min,box_count_max,box_count_estimate,Confidence,volumetric_visibility,Pallet,Anomaly,Desc,Unnamed: 9,Unnamed: 10,Unnamed: 11,box_group
+04-0411-01,0,0,0,high,100%,False,,,,,,empty
+04-0611-02,0,0,0,high,100%,False,,,,,,empty
+04-0405-02,2,3,2,high,90%,False,,,,,,few
+04-0403-03,2,3,2,medium,90%,False,True,Open box,,,,few
+04-0811-02,0,0,0,high,100%,True,,,,,,empty
+04-0609-03,7,13,10,medium,60%,True,,,,,,medium
+04-0803-05,2,3,2,high,95%,False,,,,,,few
+04-0409-01,0,0,0,high,100%,False,,,,,,empty
+04-0207-03,14,22,16,low,65%,False,,,,,,many
+04-0603-05,0,1,0,high,95%,False,True,unclear bin border,,,,empty
+04-0811-01,0,0,0,high,100%,False,,,,,,empty
+04-0803-01,1,2,1,high,95%,False,,,,,,few
+04-0605-02,6,8,6,medium,85%,False,,,,,,medium
+04-0801-01,1,2,1,medium,70%,False,,,,,,few
