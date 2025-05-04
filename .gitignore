@@ -1,4 +1,9 @@
-data/depth/*
-data/images/*
-data/bin_coordinates.json
+data/
+.env
+results/
+cache/
+.DS_Store
+__pycache__
+.vscode/
+*.sh
 *.pyc

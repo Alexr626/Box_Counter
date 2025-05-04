@@ -16,6 +16,26 @@ Box_Counter is a computer vision project that uses drone imagery and depth estim
   - Image registration: `python src/preprocessing/register_bin_images.py`
   - Depth estimation: `python src/depth_map_estimation/depth_estimations.py`
   - Depth calibration: `python src/depth_map_estimation/extract_pixel_depths.py`
+  
+## Environment Setup & Run for VLM-based Box Counting
+- Create virtual environment
+  ```
+  mamba create -n vlm_env python=3.10
+  mamba activate vlm_env
+  pip install -r requirements_vlm.txt
+  ```
+- Count boxes with ChatGPT API
+  ```
+  python -m src.count_boxes --model gpt --cache true
+  ```
+- Count boxes with local VLM
+  ```
+  python -m src.count_boxes --model Qwen/Qwen2.5-VL-7B-Instruct
+  ```
+- Fine-tune VLM for box counting
+  ```
+  python -m src.fine_tune 
+  ```
 
 ## Code Style Guidelines
 
