@@ -7,6 +7,8 @@ Box_Counter is a computer vision project that uses drone imagery and depth estim
 3. Calibrating depth maps using known barcode positions
 4. Constructing point clouds to count boxes
 
+Final report can be found [here](https://drive.google.com/file/d/1WlWKAShcUoOJe32I9k1BykQ0qjphNj-a/view?usp=sharing)
+
 ## Build & Run Commands
 - Setup environment: `python -m venv venv && source venv/bin/activate && pip install -r venv_requirements.txt`
 - Run complete pipeline: `python src/main.py`
